@@ -1,5 +1,5 @@
-import numpy as np, networkx as nx
-import scipy.sparse
+import numpy as np
+
 
 class RepMethod():
 	def __init__(self, bucket_max_value = None, method="hetero", num_buckets = None, use_other_features = False, operators = None,
@@ -70,4 +70,3 @@ def read_embedding(input_file_path):
 
 	
 	return rep
-

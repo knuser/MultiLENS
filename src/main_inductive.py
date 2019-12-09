@@ -1,23 +1,14 @@
-import sys
-import datetime
-from pathlib import Path
-import numpy as np, scipy as sp, networkx as nx
-import math, time, os, sys, random
-from collections import deque
+import math, sys
 import pickle
 import argparse
 
 import scipy.sparse as sps
-from scipy.sparse import coo_matrix
-from scipy.sparse.linalg import svds, eigs
-import sparsesvd
-
-from sklearn.decomposition import NMF, DictionaryLearning
-from sklearn.manifold import TSNE
 
 from collections import defaultdict
 
+
 from util import *
+
 
 def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_matrix = None, feature_wid_ind = None):
 	'''
@@ -37,11 +28,10 @@ def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_m
 			features.append([0.0] * feature_wid_ind[i])
 
 		for neighbor in cur_neighbors:
-
 			if id_cat_dict[neighbor] != cat:
-				continue			
-
+				continue
 			try:
+				# print cur_P
 				for i in range(cur_P):
 					node_feature = input_dense_matrix[neighbor, i]
 
@@ -50,10 +40,10 @@ def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_m
 					else:
 						bucket_index = int(node_feature)
 
-					features[i][min(bucket_index, len(features[i]) - 1)] += 1#(rep_method.alpha ** layer) * weight
+					features[i][min(bucket_index, len(features[i]) - 1)] += 1  #(rep_method.alpha ** layer) * weight
+
 			except Exception as e:
 				print "Exception:", e
-				print("Node %d has %s value %d and will not contribute to feature distribution" % (khop_neighbor, feature, node_feature))
 		cur_feature_vector = features[0]
 		
 		for feature_vector in features[1:]:
@@ -62,6 +52,7 @@ def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_m
 		combined_feature_vector += cur_feature_vector
 	
 	return combined_feature_vector
+
 
 def get_features(graph, rep_method, input_dense_matrix = None, nodes_to_embed = None):
 
@@ -174,7 +165,7 @@ def search_feature_layer(graph, rep_method, base_feature_matrix = None):
 				var_v = 0
 			else:
 				mean_v = sum_v / float(deg)
-				var_v = (sum_sq_diff / float(deg)) - (mean_v * mean_v) 
+				var_v = (sum_sq_diff / float(deg)) - (mean_v * mean_v)  #- 2.0*mean_v/float(deg)*sum_v
 
 			temp_vec = [0.0] * rep_method.use_total
 			
@@ -253,7 +244,6 @@ def get_feature_n_buckets(feature_matrix, num_buckets, bucket_max_value):
 	return result_sum, result_ind
 
 
-
 def parse_args():
 	'''
 	Parses the arguments.
@@ -286,6 +276,7 @@ def dist_cal(row1, row2):
 
 	return dist
 
+
 if __name__ == '__main__':
 
 	# assume the graph is directed, weighted
@@ -302,9 +293,9 @@ if __name__ == '__main__':
 
 	base_features = ['row', 'col', 'row_col']
 
-	###########################################
+	######################################################
 	# graph_2_file_path
-	###########################################
+	######################################################
 	input_graph_file_path = args.input
 	input_gt_path = args.cat
 	input_summary_path = args.summary
@@ -332,6 +323,9 @@ if __name__ == '__main__':
 	g_summs = pickle.load(pkl_file)
 	pkl_file.close()
 
+	######################################################
+	# Preprocess
+	######################################################
 
 	delimiter = get_delimiter(input_graph_file_path)
 
@@ -360,7 +354,7 @@ if __name__ == '__main__':
 	print '[max_node_id] ' + str(max_id)
 	print '[num_nodes] ' + str(num_nodes)
 
-	nodes_to_embed = range(int(max_id)+1)
+	nodes_to_embed = range(int(max_id)+1)  #[1,2]#
 
 	if max(rows) != max(cols):
 		rows = np.append(rows,max(max(rows), max(cols)))
@@ -373,12 +367,18 @@ if __name__ == '__main__':
 
 	CAT_DICT, unique_cat, ID_CAT_DICT = construct_cat(input_gt_path, delimiter)	
 
+
+	######################################################
+	# Multi-Lens starts.
+	######################################################
+
 	g_sums = []
 
 	neighbor_list = construct_neighbor_list(adj_matrix, nodes_to_embed)
 
-	graph = Graph(adj_matrix = adj_matrix, max_id = max_id, num_nodes = num_nodes, base_features = base_features, neighbor_list = neighbor_list,
-		directed = directed, cat_dict = CAT_DICT, id_cat_dict = ID_CAT_DICT, unique_cat = unique_cat, check_eq = check_eq)
+	graph = Graph(adj_matrix = adj_matrix, max_id = max_id, num_nodes = num_nodes, base_features = base_features,
+				  neighbor_list = neighbor_list, directed = directed, cat_dict = CAT_DICT, id_cat_dict = ID_CAT_DICT,
+				  unique_cat = unique_cat, check_eq = check_eq)
 	
 	init_feature_matrix = get_init_features(graph, base_features, nodes_to_embed)
 
@@ -448,10 +448,3 @@ if __name__ == '__main__':
 
 	if emb_write:
 		write_embedding(U, output_file_path)
-
-	
-
-	
-
-
-

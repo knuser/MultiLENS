@@ -1,21 +1,12 @@
-import sys
-import datetime
-from pathlib import Path
-import numpy as np, scipy as sp, networkx as nx
-import math, time, os, sys, random
-from collections import deque
+import math, sys
 import pickle
 import argparse
 
 import scipy.sparse as sps
-from scipy.sparse import coo_matrix
-from scipy.sparse.linalg import svds, eigs
 import sparsesvd
 
 from collections import defaultdict
 
-from sklearn.decomposition import NMF, DictionaryLearning
-from sklearn.manifold import TSNE
 
 from util import *
 
@@ -39,7 +30,7 @@ def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_m
 
 		for neighbor in cur_neighbors:
 			if id_cat_dict[neighbor] != cat:
-				continue			
+				continue
 			try:
 				# print cur_P
 				for i in range(cur_P):
@@ -51,7 +42,7 @@ def get_combined_feature_sequence(graph, rep_method, current_node, input_dense_m
 						bucket_index = int(node_feature)
 
 					bucket_index = max(bucket_index, 0)
-					features[i][min(bucket_index, len(features[i]) - 1)] += 1
+					features[i][min(bucket_index, len(features[i]) - 1)] += 1  #(rep_method.alpha ** layer) * weight
 
 			except Exception as e:
 				print "Exception:", e
@@ -176,7 +167,7 @@ def search_feature_layer(graph, rep_method, base_feature_matrix = None):
 				var_v = 0
 			else:
 				mean_v = sum_v / float(deg)
-				var_v = (sum_sq_diff / float(deg)) - (mean_v * mean_v) #- 2.0*mean_v/float(deg)*sum_v
+				var_v = (sum_sq_diff / float(deg)) - (mean_v * mean_v)  #- 2.0*mean_v/float(deg)*sum_v
 
 			temp_vec = [0.0] * rep_method.use_total
 			
@@ -224,7 +215,6 @@ def construct_neighbor_list(adj_matrix, nodes_to_embed):
 	return result
 
 
-
 def get_init_features(graph, base_features, nodes_to_embed):
 	'''
 	# set fb: sum as default.
@@ -243,6 +233,7 @@ def get_init_features(graph, base_features, nodes_to_embed):
 
 	print '[Initial_feature_all finished]'
 	return init_feature_matrix
+
 
 def get_feature_n_buckets(feature_matrix, num_buckets, bucket_max_value):
 
@@ -307,7 +298,6 @@ def get_Kis(init_feature_matrix_seq, K, L):
 		result.append(K - sum(result))
 
 	return result
-	
 
 
 if __name__ == '__main__':
@@ -316,9 +306,9 @@ if __name__ == '__main__':
 	directed = True
 
 	args = parse_args()
-	
+
 	######################################################
-	# Base features to use.
+	# Base features to use
 	######################################################
 
 	emb_write = True
@@ -377,7 +367,7 @@ if __name__ == '__main__':
 	print '[max_node_id] ' + str(max_id)
 	print '[num_nodes] ' + str(num_nodes)
 
-	nodes_to_embed = range(int(max_id)+1) #[1,2]#
+	nodes_to_embed = range(int(max_id)+1)  #[1,2]#
 
 	if max(rows) != max(cols):
 		rows = np.append(rows,max(max(rows), max(cols)))
@@ -401,7 +391,8 @@ if __name__ == '__main__':
 	neighbor_list = construct_neighbor_list(adj_matrix, nodes_to_embed)
 
 	graph = Graph(adj_matrix = adj_matrix, max_id = max_id, num_nodes = num_nodes, base_features = base_features,
-		neighbor_list = neighbor_list, directed = directed, cat_dict = CAT_DICT, id_cat_dict = ID_CAT_DICT, unique_cat = unique_cat, check_eq = check_eq)
+				  neighbor_list = neighbor_list, directed = directed, cat_dict = CAT_DICT, id_cat_dict = ID_CAT_DICT,
+				  unique_cat = unique_cat, check_eq = check_eq)
 
 	rep_method = RepMethod(method = "hetero", bucket_max_value = 30, num_buckets = num_buckets, operators = op, use_total = len(op))
 
@@ -456,6 +447,3 @@ if __name__ == '__main__':
 
 	if emb_write:
 		write_embedding(rep, output_file_path)
-	
-
-
